@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed, ref } from 'vue'
 import { sortGames, selectRandomIds } from '../utils/games'
 import type { FeaturedGame } from '../types/games'
 
@@ -8,6 +9,9 @@ useSeoMeta({
 })
 
 const api = useGamesApi()
+const search = ref('')
+const genre = ref('all')
+const sortBy = ref<'rating' | 'date'>('rating')
 
 const { data: games, pending, error, refresh } = await useAsyncData<FeaturedGame[]>(
   'featured-games',
@@ -26,6 +30,19 @@ const { data: games, pending, error, refresh } = await useAsyncData<FeaturedGame
   },
   { default: () => [] }
 )
+
+const genres = computed(() => [...new Set((games.value ?? [])
+  .map(game => game.genre?.name)
+  .filter((name): name is string => Boolean(name)))].sort((a, b) => a.localeCompare(b)))
+
+const visibleGames = computed(() => {
+  const query = search.value.trim().toLocaleLowerCase()
+  return sortGames((games.value ?? []).filter((game) => {
+    const matchesSearch = !query || game.title.toLocaleLowerCase().includes(query)
+    const matchesGenre = genre.value === 'all' || game.genre?.name === genre.value
+    return matchesSearch && matchesGenre
+  }), sortBy.value)
+})
 
 function retry() {
   refresh()
@@ -59,7 +76,28 @@ function retry() {
             <p class="eyebrow">THE COLLECTION</p>
             <h2 id="library-heading">Selected games <span>{{ games.length.toString().padStart(2, '0') }}</span></h2>
           </div>
+          <p class="sort-caption">SORTED BY <strong>{{ sortBy === 'rating' ? 'COMMUNITY RATING' : 'RELEASE DATE' }}</strong></p>
         </div>
+
+        <form class="controls" role="search" @submit.prevent>
+          <label class="search-control">
+            <span class="sr-only">Search games by title</span>
+            <span class="search-glyph" aria-hidden="true">⌕</span>
+            <input v-model="search" type="search" placeholder="Find a game..." autocomplete="off">
+          </label>
+          <label class="select-control">
+            <span class="sr-only">Filter by genre</span>
+            <select v-model="genre">
+              <option value="all">All genres</option>
+              <option v-for="name in genres" :key="name" :value="name">{{ name }}</option>
+            </select>
+          </label>
+          <fieldset class="sort-control">
+            <legend class="sr-only">Sort games</legend>
+            <button type="button" :aria-pressed="sortBy === 'rating'" @click="sortBy = 'rating'">Top rated</button>
+            <button type="button" :aria-pressed="sortBy === 'date'" @click="sortBy = 'date'">Latest</button>
+          </fieldset>
+        </form>
 
         <div v-if="pending" class="status-panel" role="status" aria-live="polite">
           <span class="loading-mark" aria-hidden="true" />
@@ -71,12 +109,13 @@ function retry() {
           <p>Check that the Games API is running, then try again.</p>
           <button class="text-button" type="button" @click="retry">Try again <span aria-hidden="true">↗</span></button>
         </div>
-        <div v-else-if="games.length" class="game-grid">
-          <GameCard v-for="(game, index) in games" :key="game.id" :game="game" :style="{ '--card-order': index }" />
+        <div v-else-if="visibleGames.length" class="game-grid">
+          <GameCard v-for="(game, index) in visibleGames" :key="game.id" :game="game" :style="{ '--card-order': index }" />
         </div>
         <div v-else class="empty-state">
-          <p class="eyebrow">THE ARCHIVE IS EMPTY</p>
-          <h3>No games were found for this collection.</h3>
+          <p class="eyebrow">NO MATCHES</p>
+          <h3>Nothing in this corner of the archive.</h3>
+          <button class="text-button" type="button" @click="search = ''; genre = 'all'">Clear filters <span aria-hidden="true">↗</span></button>
         </div>
       </section>
     </main>
