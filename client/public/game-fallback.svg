@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 620" role="img" aria-label="Abstract game artwork placeholder">
+  <rect width="900" height="620" fill="#dce5d7"/>
+  <path d="M0 440 225 265l160 125 191-213L900 426v194H0Z" fill="#71866b"/>
+  <path d="m0 510 226-173 131 104 190-146 353 211v114H0Z" fill="#273a31"/>
+  <circle cx="682" cy="157" r="61" fill="#f3c85b"/>
+  <path d="M75 73h94v10H75zm0 22h50v5H75z" fill="#273a31" opacity=".55"/>
+  <text x="76" y="555" fill="#fffdf7" font-family="Georgia,serif" font-size="32" letter-spacing="2">ARTWORK UNAVAILABLE</text>
+</svg>
