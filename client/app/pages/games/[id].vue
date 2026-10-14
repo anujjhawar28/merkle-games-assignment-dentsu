@@ -1,21 +1,24 @@
 <script setup lang="ts">
-import type { FeaturedGame, Game, GameStats } from '../../types/games'
-import { formatRating, formatReleaseDate, mergeStats, resolveImageUrl } from '../../utils/games'
+import { computed } from 'vue'
+import { API_ERROR_FALLBACK, APP_PATHS, GAME_CONFIG, SITE_CONFIG } from '@/constants'
+import type { FeaturedGame } from '@/types/games'
+import { mergeStats } from '@/utils/games'
+import { getApiErrorMessage } from '@/utils/api/fetchWithRetry'
 
 const route = useRoute()
 const gameId = computed(() => Number(route.params.id))
 const api = useGamesApi()
-const apiBase = String(useRuntimeConfig().public.apiBase)
 
-const { data: game, pending, error, refresh } = await useAsyncData<FeaturedGame>(
-  () => `game-${gameId.value}`,
+const { data: game, pending, error, refresh } = await useLazyAsyncData<FeaturedGame>(
+  () => `${GAME_CONFIG.detailDataKeyPrefix}${gameId.value}`,
   async () => {
     if (!Number.isInteger(gameId.value) || gameId.value < 1) {
       throw createError({ statusCode: 404, statusMessage: 'Game not found' })
     }
+
     const [record, stats] = await Promise.all([
       api.getGame(gameId.value),
-      api.getStats(gameId.value).catch(() => ({} as GameStats))
+      api.getStats(gameId.value)
     ])
     return mergeStats(record, stats)
   }
@@ -23,102 +26,91 @@ const { data: game, pending, error, refresh } = await useAsyncData<FeaturedGame>
 
 useSeoMeta({
   title: () => game.value?.title ?? 'Game details',
-  description: () => game.value?.description?.slice(0, 160) ?? 'Game details and community reviews.'
+  description: () => game.value?.description?.slice(0, 160) ?? SITE_CONFIG.description
 })
 
-function useFallback(event: Event) {
-  const image = event.target as HTMLImageElement
-  image.onerror = null
-  image.src = '/game-fallback.svg'
-}
-
-function reviewRating(review: NonNullable<Game['reviews']>[number]): number {
-  return Number(review.rating_score ?? review.rating ?? 0)
-}
+const errorMessage = computed(() => error.value
+  ? getApiErrorMessage(error.value, API_ERROR_FALLBACK.gameDetails)
+  : API_ERROR_FALLBACK.gameDetails)
 
 function retryGame() {
-  refresh()
+  return refresh()
 }
 </script>
 
 <template>
-  <div class="site-shell detail-shell">
-    <a class="skip-link" href="#main-content">Skip to game details</a>
-    <header class="site-header">
-      <NuxtLink class="brand" to="/" aria-label="Merkle Games home">
-        <span class="brand__mark" aria-hidden="true">M</span>
-        <span>MERKLE<span class="brand__light"> / GAMES</span></span>
-      </NuxtLink>
-      <NuxtLink class="header-back" to="/">← <span>BACK TO THE COLLECTION</span></NuxtLink>
-    </header>
-
-    <main id="main-content" class="detail-main">
-      <output v-if="pending" class="status-panel" aria-live="polite">
-        <span class="loading-mark" aria-hidden="true" />
-        <span class="status-panel__message">Opening the archive<span class="loading-dots">...</span></span>
-      </output>
-      <div v-else-if="error || !game" class="status-panel status-panel--error" role="alert">
-        <p class="eyebrow">NOT FOUND</p>
-        <h1>This game isn’t in the archive.</h1>
-        <p>The details may be unavailable right now.</p>
-        <button class="text-button" type="button" @click="retryGame">Try again <span aria-hidden="true">↗</span></button>
-        <NuxtLink class="text-button detail-return" to="/">Back to all games <span aria-hidden="true">↗</span></NuxtLink>
-      </div>
-      <template v-else>
-        <section class="detail-hero">
-          <div class="detail-copy">
-            <p class="eyebrow"><span>{{ game.genre?.name || 'GAME FILE' }}</span> · ARCHIVE NO. {{ String(game.id).padStart(4, '0') }}</p>
-            <h1>{{ game.title }}</h1>
-            <p class="detail-description">{{ game.description || 'No description is available for this title.' }}</p>
-            <div class="detail-byline">
-              <span>DEVELOPED BY</span>
-              <strong>{{ game.developer?.name || 'Unknown studio' }}</strong>
-            </div>
-          </div>
-          <figure class="detail-art">
-            <img
-              :src="resolveImageUrl(game.images?.[0]?.image_url, apiBase)"
-              :alt="`${game.title} featured artwork`"
-              fetchpriority="high"
-              @error="useFallback"
-            >
-            <figcaption>FEATURED ARTWORK <span>FIG. {{ String(game.id).padStart(2, '0') }}</span></figcaption>
-          </figure>
-        </section>
-
-        <section class="facts-row" aria-label="Game facts">
-          <div class="fact"><span>RELEASED</span><strong>{{ formatReleaseDate(game.release_date) }}</strong></div>
-          <div class="fact"><span>COMMUNITY RATING</span><strong class="fact-rating"><span aria-hidden="true">★</span> {{ formatRating(game.average_rating) }} <small>/ 10</small></strong></div>
-          <div class="fact"><span>RATINGS</span><strong>{{ game.total_reviews.toLocaleString() }}</strong></div>
-          <div class="fact"><span>GENRE</span><strong>{{ game.genre?.name || 'Uncategorized' }}</strong></div>
-        </section>
-
-        <section class="reviews-section" aria-labelledby="reviews-title">
-          <div class="section-heading">
-            <div>
-              <p class="eyebrow">PLAYER IMPRESSIONS</p>
-              <h2 id="reviews-title">The reviews <span>{{ game.reviews?.length ?? 0 }}</span></h2>
-            </div>
-            <span class="review-total">{{ game.total_reviews.toLocaleString() }} TOTAL RATINGS</span>
-          </div>
-          <div v-if="game.reviews?.length" class="review-list">
-            <article v-for="review in game.reviews" :key="review.id" class="review-item">
-              <div class="review-item__top">
-                <strong>{{ review.user?.username || 'Anonymous player' }}</strong>
-                <span class="review-score"><span aria-hidden="true">★</span> {{ formatRating(reviewRating(review)) }}</span>
-              </div>
-              <p>{{ review.review_text || 'This player left a rating without written notes.' }}</p>
-              <time v-if="review.review_date" :datetime="review.review_date">{{ formatReleaseDate(review.review_date) }}</time>
-            </article>
-          </div>
-          <p v-else class="no-reviews">No written reviews yet. Be the first to leave an impression.</p>
-        </section>
+  <main id="main-content" class="detail-main">
+    <div v-if="pending" class="status-panel" aria-live="polite">
+      <span class="loading-mark" aria-hidden="true" />
+      <span class="status-panel__message">Opening the archive<span class="loading-dots">...</span></span>
+    </div>
+    <FeedbackPanel v-else-if="error || !game" kind="error" heading-level="h1" eyebrow="NOT FOUND"
+      title="This game isn’t in the archive." :message="errorMessage">
+      <template #actions>
+        <button class="text-button" type="button" @click="retryGame">Try again <span
+            aria-hidden="true">↗</span></button>
+        <NuxtLink class="text-button" :to="APP_PATHS.home">Back to all games <span aria-hidden="true">↗</span>
+        </NuxtLink>
       </template>
-    </main>
-
-    <footer class="site-footer">
-      <span>MERKLE GAMES <span class="footer-dot">●</span> A SMALL ARCHIVE OF BIG WORLDS</span>
-      <NuxtLink to="/">← ALL GAMES</NuxtLink>
-    </footer>
-  </div>
+    </FeedbackPanel>
+    <template v-else>
+      <GameDetailHero :game="game" />
+      <GameFacts :game="game" />
+      <GameReviews :reviews="game.reviews" :total-reviews="game.total_reviews" />
+    </template>
+  </main>
 </template>
+
+<style scoped lang="scss">
+.detail-main {
+  min-height: 65vh;
+}
+
+.status-panel {
+  min-height: 265px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.loading-mark {
+  width: 30px;
+  aspect-ratio: 1;
+  margin-bottom: 15px;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-accent-strong);
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+
+.loading-dots {
+  display: inline-block;
+  width: 17px;
+  overflow: hidden;
+  animation: dots 1s steps(4, end) infinite;
+  vertical-align: bottom;
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .loading-mark,
+  .loading-dots {
+    animation-duration: .01ms;
+    animation-iteration-count: 1;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes dots {
+  to {
+    width: 0;
+  }
+}
+</style>

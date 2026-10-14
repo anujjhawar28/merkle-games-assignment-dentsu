@@ -1,4 +1,6 @@
-import type { ApiResource, Game, GameStats } from '../types/games'
+import { API_CONFIG } from '@/constants'
+import type { ApiResource, Game, GameStats } from '@/types/games'
+import { fetchWithRetry } from '@/utils/api/fetchWithRetry'
 
 export function useGamesApi() {
   const config = useRuntimeConfig()
@@ -6,17 +8,26 @@ export function useGamesApi() {
 
   return {
     async getIdsByDateRange(from: string, to: string): Promise<number[]> {
-      const result = await $fetch<{ ids: number[] }>(`${base}/games/by-date-range`, {
-        query: { from, to }
-      })
+      const result = await fetchWithRetry(() => $fetch<{ ids: number[] }>(
+        `${base}${API_CONFIG.gameIdsByDateRangePath}`,
+        { query: { from, to }, timeout: API_CONFIG.timeoutMs }
+      ))
       return result.ids
     },
+
     async getGame(id: number): Promise<Game> {
-      const result = await $fetch<ApiResource<Game>>(`${base}/games/${id}`)
+      const result = await fetchWithRetry(() => $fetch<ApiResource<Game>>(
+        `${base}${API_CONFIG.gamesPath}/${id}`,
+        { timeout: API_CONFIG.timeoutMs }
+      ))
       return result.data
     },
+
     async getStats(id: number): Promise<GameStats> {
-      const result = await $fetch<ApiResource<GameStats>>(`${base}/games/${id}/stats`)
+      const result = await fetchWithRetry(() => $fetch<ApiResource<GameStats>>(
+        `${base}${API_CONFIG.gamesPath}/${id}${API_CONFIG.gameStatsPath}`,
+        { timeout: API_CONFIG.timeoutMs }
+      ))
       return result.data
     }
   }
