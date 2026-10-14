@@ -53,10 +53,10 @@ function retryGame() {
     </header>
 
     <main id="main-content" class="detail-main">
-      <div v-if="pending" class="status-panel" role="status" aria-live="polite">
+      <output v-if="pending" class="status-panel" aria-live="polite">
         <span class="loading-mark" aria-hidden="true" />
-        <p>Opening the archive<span class="loading-dots">...</span></p>
-      </div>
+        <span class="status-panel__message">Opening the archive<span class="loading-dots">...</span></span>
+      </output>
       <div v-else-if="error || !game" class="status-panel status-panel--error" role="alert">
         <p class="eyebrow">NOT FOUND</p>
         <h1>This game isn’t in the archive.</h1>

@@ -1,3 +1,5 @@
+export type ApiNumeric = number | string | null
+
 export interface Genre {
   id: number
   name: string
@@ -16,8 +18,8 @@ export interface GameImage {
 
 export interface Review {
   id: number
-  rating_score?: number | string | null
-  rating?: number | string | null
+  rating_score?: ApiNumeric
+  rating?: ApiNumeric
   review_text?: string | null
   review_date?: string | null
   user?: { id: number; username: string } | null
@@ -34,8 +36,8 @@ export interface Game {
   publisher?: Company | null
   images?: GameImage[]
   reviews?: Review[]
-  average_rating?: number | string | null
-  total_reviews?: number | string | null
+  average_rating?: ApiNumeric
+  total_reviews?: ApiNumeric
 }
 
 export interface ApiResource<T> {
@@ -43,8 +45,8 @@ export interface ApiResource<T> {
 }
 
 export interface GameStats {
-  average_rating?: number | string | null
-  total_reviews?: number | string | null
+  average_rating?: ApiNumeric
+  total_reviews?: ApiNumeric
 }
 
 export interface FeaturedGame extends Game {
