@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { formatRating, formatReleaseDate, mergeStats, resolveImageUrl, selectRandomIds, sortGames } from '../app/utils/games'
-import type { FeaturedGame } from '../app/types/games'
+import { computed, ref } from 'vue'
+import { GAME_CONFIG } from '@/constants'
+import { useGameSort } from '@/composables/useGameSort'
+import { formatArchiveNumber, formatRating, formatReleaseDate, isReleaseDateInFeaturedRange, mergeStats, resolveImageUrl, selectRandomIds, sortGames } from '@/utils/games'
+import type { FeaturedGame } from '@/types/games'
 
 describe('game utilities', () => {
   it('selects a unique random sample without mutating the API ids', () => {
@@ -15,6 +18,9 @@ describe('game utilities', () => {
   it('returns only the unique ids available when the requested sample is larger', () => {
     expect(selectRandomIds([4, 4, 7], 10, () => 0)).toHaveLength(2)
     expect(selectRandomIds([], 5)).toEqual([])
+    expect(selectRandomIds([1, 2], 0)).toEqual([])
+    expect(selectRandomIds(Array.from({ length: 30 }, (_, index) => index + 1), GAME_CONFIG.featuredCount, () => 0))
+      .toHaveLength(GAME_CONFIG.featuredCount)
   })
 
   it('sorts rating high-to-low by default utility and dates newest first', () => {
@@ -48,6 +54,16 @@ describe('game utilities', () => {
     }, {}).average_rating).toBe(7)
   })
 
+  it('formats archive numbers and checks the featured release window', () => {
+    expect(formatArchiveNumber(23)).toBe('0023')
+    expect(formatArchiveNumber(23, 2)).toBe('23')
+    expect(isReleaseDateInFeaturedRange('2015-01-01')).toBe(true)
+    expect(isReleaseDateInFeaturedRange('2017-12-31')).toBe(true)
+    expect(isReleaseDateInFeaturedRange('2014-12-31')).toBe(false)
+    expect(isReleaseDateInFeaturedRange(null)).toBe(false)
+    expect(GAME_CONFIG.featuredCount).toBe(15)
+  })
+
   it('uses API stats when available and formats invalid values safely', () => {
     const game = { id: 1, title: 'Test', average_rating: 6, total_reviews: 2 }
     const stats = mergeStats(game, { average_rating: '8.5', total_reviews: '12' })
@@ -66,5 +82,18 @@ describe('game utilities', () => {
       .toBe('https://cdn.example.test/cover.webp')
     expect(resolveImageUrl(null, 'http://localhost:7000/api/v1')).toBe('/game-fallback.svg')
     expect(resolveImageUrl('/cover.webp', 'not a url')).toBe('/game-fallback.svg')
+  })
+
+  it('sorts filtered games through the sorting composable without watchers', () => {
+    const games = ref([
+      { id: 1, title: 'Low', average_rating: 4, total_reviews: 2 },
+      { id: 2, title: 'High', average_rating: 9, total_reviews: 3 }
+    ] as FeaturedGame[])
+    const filteredGames = computed(() => games.value.filter(game => game.total_reviews > 2))
+    const { sortBy, sortedGames } = useGameSort(filteredGames)
+
+    expect(sortedGames.value.map(game => game.id)).toEqual([2])
+    sortBy.value = 'date'
+    expect(sortedGames.value.map(game => game.id)).toEqual([2])
   })
 })

@@ -1,0 +1,24 @@
+/* Shared design tokens used by global and component-scoped styles */
+:root {
+  --color-background: #f3f4ef;
+  --color-surface: #fffdf7;
+  --color-surface-muted: #e8ebe2;
+  --color-intro: #e8ece4;
+  --color-pattern: #c4cec0;
+  --color-text: #202c25;
+  --color-text-muted: #657066;
+  --color-text-soft: #4e5c52;
+  --color-intro-text: #4d5a50;
+  --color-placeholder: #818b80;
+  --color-border: #cdd3c8;
+  --color-accent: #425e4c;
+  --color-accent-rgb: 66 94 76;
+  --color-accent-strong: #a84430;
+  --color-white: #fff;
+  --color-white-rgb: 255 255 255;
+  --section-gutter: 8.5%;
+  --page-inset: 72px;
+  --content-width: 1320px;
+  --font-display: 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Georgia, serif;
+  --font-body: 'Trebuchet MS', 'Segoe UI', sans-serif;
+}
