@@ -17,14 +17,14 @@ export function mergeStats(game: Game, stats: GameStats): FeaturedGame {
     .map(review => Number(review.rating_score ?? review.rating))
     .filter(Number.isFinite)
   const average = stats.average_rating ?? game.average_rating
+  const averageFromReviews = ratings.length === 0
+    ? 0
+    : ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length
+  const average_rating = average == null ? averageFromReviews : Number(average)
 
   return {
     ...game,
-    average_rating: average == null
-      ? ratings.length
-        ? ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length
-        : 0
-      : Number(average),
+    average_rating,
     total_reviews: Number(stats.total_reviews ?? game.total_reviews ?? ratings.length)
   }
 }

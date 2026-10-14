@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { sortGames, selectRandomIds } from '../utils/games'
-import type { FeaturedGame } from '../types/games'
+import { mergeStats, sortGames, selectRandomIds } from '../utils/games'
+import type { FeaturedGame, GameStats } from '../types/games'
 
 useSeoMeta({
   title: 'Discover games',
@@ -19,12 +19,11 @@ const { data: games, pending, error, refresh } = await useAsyncData<FeaturedGame
     const ids = await api.getIdsByDateRange('2015-01-01', '2017-12-31')
     const selected = selectRandomIds(ids, 15)
     const records = await Promise.all(selected.map(async (id) => {
-      const [game, stats] = await Promise.all([api.getGame(id), api.getStats(id)])
-      return {
-        ...game,
-        average_rating: Number(stats.average_rating ?? 0),
-        total_reviews: Number(stats.total_reviews ?? 0)
-      }
+      const [game, stats] = await Promise.all([
+        api.getGame(id),
+        api.getStats(id).catch(() => ({} as GameStats))
+      ])
+      return mergeStats(game, stats)
     }))
     return sortGames(records, 'rating')
   },
@@ -99,10 +98,10 @@ function retry() {
           </fieldset>
         </form>
 
-        <div v-if="pending" class="status-panel" role="status" aria-live="polite">
+        <output v-if="pending" class="status-panel" aria-live="polite">
           <span class="loading-mark" aria-hidden="true" />
-          <p>Gathering the collection<span class="loading-dots">...</span></p>
-        </div>
+          <span class="status-panel__message">Gathering the collection<span class="loading-dots">...</span></span>
+        </output>
         <div v-else-if="error" class="status-panel status-panel--error" role="alert">
           <p class="eyebrow">CONNECTION INTERRUPTED</p>
           <h3>The archive didn’t load.</h3>
