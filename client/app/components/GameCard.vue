@@ -3,13 +3,23 @@ import { APP_PATHS } from '@/constants'
 import type { FeaturedGame } from '@/types/games'
 import { formatRating, formatReleaseDate } from '@/utils/games'
 
-defineProps<{ game: FeaturedGame }>()
+const props = withDefaults(defineProps<{
+  game: FeaturedGame
+  priorityImage?: boolean
+}>(), {
+  priorityImage: false,
+})
 </script>
 
 <template>
-  <NuxtLink class="game-card" :to="APP_PATHS.gameDetails(game.id)" :aria-label="`View ${game.title} details`">
+  <NuxtLink class="game-card" :to="APP_PATHS.gameDetails(game.id)">
     <div class="game-card__art">
-      <GameArtwork :source="game.images?.[0]?.image_url" :alt="`${game.title} artwork`" loading="lazy" />
+      <GameArtwork
+        :source="game.images?.[0]?.image_url"
+        :alt="`${game.title} artwork`"
+        :loading="priorityImage ? 'eager' : 'lazy'"
+        :fetch-priority="priorityImage ? 'high' : 'auto'"
+      />
       <span class="game-card__rating"><span aria-hidden="true">★</span> {{ formatRating(game.average_rating) }}</span>
     </div>
     <div class="game-card__body">

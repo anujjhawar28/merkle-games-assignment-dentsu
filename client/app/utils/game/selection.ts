@@ -1,3 +1,11 @@
+/**
+ * Random sampling helpers for picking which games to show as featured.
+ */
+
+/**
+ * Shuffles unique `ids` (Fisher–Yates) and returns up to `count` of them.
+ * `random` is injectable for tests. Returns an empty array when `count` is not positive.
+ */
 export function selectRandomIds(ids: number[], count: number, random = Math.random): number[] {
   if (!Number.isInteger(count) || count <= 0) return []
 

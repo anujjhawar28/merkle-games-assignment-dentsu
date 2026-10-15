@@ -1,5 +1,9 @@
+/**
+ * Retries flaky HTTP calls with backoff and maps common API errors to user-facing messages.
+ */
 import { API_CONFIG } from '@/constants'
 
+/** Options for how many times to retry and how long to wait between attempts. */
 export interface FetchWithRetryOptions {
   maxRetries?: number
   retryDelayMs?: number
@@ -36,6 +40,10 @@ function canRetry(error: unknown): boolean {
 
 const wait = (milliseconds: number) => new Promise<void>(resolve => setTimeout(resolve, milliseconds))
 
+/**
+ * Runs `request` and retries on transient failures with exponential backoff.
+ * Stops after `maxRetries` or when the error is not considered retryable.
+ */
 export async function fetchWithRetry<T>(
   request: () => Promise<T>,
   {
@@ -57,6 +65,9 @@ export async function fetchWithRetry<T>(
   return attempt(0)
 }
 
+/**
+ * Turns a caught API error into a short message for the UI, using `fallback` when status is unknown.
+ */
 export function getApiErrorMessage(error: unknown, fallback: string): string {
   const statusCode = getStatusCode(error)
   if (statusCode === 404) return 'The requested game could not be found.'

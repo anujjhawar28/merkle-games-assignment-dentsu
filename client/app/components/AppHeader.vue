@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { APP_PATHS, SITE_CONFIG } from "@/constants";
+import { APP_PATHS } from "@/constants";
 
 const route = useRoute();
 const isGamePage = computed(() => route.path.startsWith(`${APP_PATHS.games}/`));
@@ -8,11 +8,7 @@ const isGamePage = computed(() => route.path.startsWith(`${APP_PATHS.games}/`));
 
 <template>
   <header class="site-header">
-    <NuxtLink
-      class="brand"
-      :to="APP_PATHS.home"
-      :aria-label="`${SITE_CONFIG.name} home`"
-    >
+    <NuxtLink class="brand" :to="APP_PATHS.home">
       <span class="brand__mark" aria-hidden="true">M</span>
       <span>MERKLE<span class="brand__light"> / GAMES</span></span>
     </NuxtLink>

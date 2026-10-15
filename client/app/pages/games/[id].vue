@@ -1,28 +1,13 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { API_ERROR_FALLBACK, APP_PATHS, GAME_CONFIG, SITE_CONFIG } from '@/constants'
-import type { FeaturedGame } from '@/types/games'
-import { mergeStats } from '@/utils/games'
+import { API_ERROR_FALLBACK, APP_PATHS, SITE_CONFIG } from '@/constants'
+import { useGameDetail } from '@/composables/useGameDetail'
 import { getApiErrorMessage } from '@/utils/api/fetchWithRetry'
 
 const route = useRoute()
 const gameId = computed(() => Number(route.params.id))
-const api = useGamesApi()
 
-const { data: game, pending, error, refresh } = await useLazyAsyncData<FeaturedGame>(
-  () => `${GAME_CONFIG.detailDataKeyPrefix}${gameId.value}`,
-  async () => {
-    if (!Number.isInteger(gameId.value) || gameId.value < 1) {
-      throw createError({ statusCode: 404, statusMessage: 'Game not found' })
-    }
-
-    const [record, stats] = await Promise.all([
-      api.getGame(gameId.value),
-      api.getStats(gameId.value)
-    ])
-    return mergeStats(record, stats)
-  }
-)
+const { data: game, pending, error, refresh } = await useGameDetail(gameId)
 
 useSeoMeta({
   title: () => game.value?.title ?? 'Game details',

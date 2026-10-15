@@ -1,5 +1,12 @@
+/**
+ * Combines raw game data with API stats into the shape used on featured and detail views.
+ */
 import type { FeaturedGame, Game, GameStats } from '@/types/games'
 
+/**
+ * Merges a `Game` and `GameStats` into a `FeaturedGame`, preferring API averages
+ * and review counts and falling back to values derived from embedded reviews.
+ */
 export function mergeStats(game: Game, stats: GameStats): FeaturedGame {
   const ratings = (game.reviews ?? [])
     .map(review => Number(review.rating_score ?? review.rating))

@@ -1,33 +1,19 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { API_ERROR_FALLBACK, GAME_CONFIG, SITE_CONFIG } from '@/constants'
-import type { FeaturedGame } from '@/types/games'
+import { useFeaturedGames } from '@/composables/useFeaturedGames'
 import { useGameSort } from '@/composables/useGameSort'
 import { getApiErrorMessage } from '@/utils/api/fetchWithRetry'
-import { mergeStats, selectRandomIds } from '@/utils/games'
 
 useSeoMeta({
   title: 'Discover games',
   description: SITE_CONFIG.description
 })
 
-const api = useGamesApi()
 const search = ref('')
 const genre = ref(GAME_CONFIG.allGenresFilter)
 
-const { data: games, pending, error, refresh } = await useLazyAsyncData<FeaturedGame[]>(
-  GAME_CONFIG.featuredDataKey,
-  async () => {
-    const ids = await api.getIdsByDateRange(GAME_CONFIG.releaseDateFrom, GAME_CONFIG.releaseDateTo)
-    const selectedIds = selectRandomIds(ids, GAME_CONFIG.featuredCount)
-    const records = await Promise.all(selectedIds.map(async (id) => {
-      const [game, stats] = await Promise.all([api.getGame(id), api.getStats(id)])
-      return mergeStats(game, stats)
-    }))
-    return records
-  },
-  { default: () => [] }
-)
+const { data: games, pending, error, refresh } = await useFeaturedGames()
 
 const genres = computed(() => [...new Set((games.value ?? [])
   .map(game => game.genre?.name)
@@ -84,8 +70,13 @@ function retry() {
         </template>
       </FeedbackPanel>
       <div v-else-if="sortedGames.length" class="game-grid">
-        <LazyGameCard v-for="(game, index) in sortedGames" :key="game.id" :game="game"
-          :style="{ '--card-order': index }" />
+        <LazyGameCard
+          v-for="(game, index) in sortedGames"
+          :key="game.id"
+          :game="game"
+          :priority-image="index < 2"
+          :style="{ '--card-order': index }"
+        />
       </div>
       <FeedbackPanel v-else eyebrow="NO MATCHES" title="Nothing in this corner of the archive.">
         <template #actions>
