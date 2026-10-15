@@ -75,13 +75,14 @@ describe('game utilities', () => {
     expect(formatReleaseDate('not-a-date')).toBe('Release date unavailable')
   })
 
-  it('resolves API-relative images against the API origin and falls back for missing images', () => {
-    expect(resolveImageUrl('/media/cover?w=300', 'http://localhost:7000/api/v1'))
+  it('resolves API-relative images against the media origin and falls back for missing images', () => {
+    expect(resolveImageUrl('/media/cover?w=300', 'http://localhost:7000'))
       .toBe('http://localhost:7000/media/cover?w=300')
-    expect(resolveImageUrl('https://cdn.example.test/cover.webp', 'http://localhost:7000/api/v1'))
+    expect(resolveImageUrl('https://cdn.example.test/cover.webp', 'http://localhost:7000'))
       .toBe('https://cdn.example.test/cover.webp')
-    expect(resolveImageUrl(null, 'http://localhost:7000/api/v1')).toBe('/game-fallback.svg')
+    expect(resolveImageUrl(null, 'http://localhost:7000')).toBe('/game-fallback.svg')
     expect(resolveImageUrl('/cover.webp', 'not a url')).toBe('/game-fallback.svg')
+    expect(resolveImageUrl('/media/cover?w=300', '/media')).toBe('/media/cover?w=300')
   })
 
   it('sorts filtered games through the sorting composable without watchers', () => {

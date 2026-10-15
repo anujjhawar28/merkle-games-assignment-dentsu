@@ -17,13 +17,29 @@ npm ci
 npm run dev
 ```
 
-Open `http://localhost:3000`. The client reads the API address from `NUXT_PUBLIC_API_BASE`:
+Open `http://localhost:3000`.
+
+## Environment variables
+
+Copy `.env.example` to `.env` and set these values for local development (or in your deployment environment). Restart the Nuxt dev server after any `.env` change.
+
+| Variable | Scope | Purpose |
+| --- | --- | --- |
+| `NUXT_API_BASE` | Server only | Direct upstream API URL for SSR fetches and the Nitro proxy target (e.g. `http://localhost:8000/api/v1`). |
+| `NUXT_PUBLIC_API_BASE` | Public | Browser-facing, same-origin path for JSON API requests (e.g. `/api/v1`). Nuxt proxies this to `NUXT_API_BASE` in dev and via `routeRules` in production. |
+| `NUXT_PUBLIC_MEDIA_BASE` | Public | Absolute API origin for game cover and media URLs in the browser (e.g. `http://localhost:8000`). JSON API traffic stays on `NUXT_PUBLIC_API_BASE`. |
+
+Example (matches `.env.example`):
 
 ```env
-NUXT_PUBLIC_API_BASE=http://localhost:8000/api/v1
+NUXT_API_BASE=http://localhost:8000/api/v1
+NUXT_PUBLIC_API_BASE=/api/v1
+NUXT_PUBLIC_MEDIA_BASE=http://localhost:8000
 ```
 
-Set this variable in `.env` for local development or in the deployment environment. It must include the API version path.
+### SSR and data caching
+
+On the first load of a page, game data is fetched on the server and serialized into the Nuxt payload; the browser hydrates from that payload instead of issuing duplicate game JSON API calls on first paint. Client-side navigation to routes that have not been visited yet fetches data as needed. When you navigate back to a page you already opened, composables reuse cached `useAsyncData` results via `getPersistedAsyncData` unless you trigger a manual retry or refresh. Changing `.env` requires restarting `npm run dev`.
 
 ## Architecture
 

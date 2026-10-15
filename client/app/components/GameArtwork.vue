@@ -13,8 +13,8 @@ const props = withDefaults(defineProps<{
   fetchPriority: 'auto'
 })
 
-const apiBase = String(useRuntimeConfig().public.apiBase)
-const imageUrl = computed(() => resolveImageUrl(props.source, apiBase))
+const mediaBase = String(useRuntimeConfig().public.mediaBase)
+const imageUrl = computed(() => resolveImageUrl(props.source, mediaBase))
 
 function useFallback(event: Event) {
   if (event.currentTarget instanceof HTMLImageElement) setFallbackImage(event.currentTarget)

@@ -33,7 +33,7 @@ npm ci
 npm run dev
 ```
 
-The client is available at <http://localhost:3000>. Its `NUXT_PUBLIC_API_BASE` setting defaults to `http://localhost:8000/api/v1`; update `client/.env` if the API runs at a different address. Restart the Nuxt server after changing environment variables.
+The client is available at <http://localhost:3000>. Adjust API settings in `client/.env` if the backend is not at `http://localhost:8000` (see [client README](./client/README.md#environment-variables)). Restart the Nuxt dev server after changing `.env`.
 
 ## Services
 
@@ -59,3 +59,11 @@ Run the server tests from `server/`:
 ```sh
 npm test
 ```
+
+## Lighthouse
+
+Homepage audit against a local production preview at <http://localhost:3000>:
+
+![Lighthouse audit - homepage](./docs/lighthouse-home.png)
+
+*Performance 91; Accessibility, Best Practices, and SEO 100. Chrome extensions can skew load metrics—audit in incognito or a profile without extensions if you need a clean performance run.*
